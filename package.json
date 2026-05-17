@@ -1,0 +1,30 @@
+{
+  "name": "lifeboard",
+  "version": "1.0.0",
+  "description": "a full stack project",
+  "main": "index.js",
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "db:migrate": "cd apps/server && npx prisma migrate dev",
+    "db:studio": "cd apps/server && npx prisma studio",
+    "db:seed": "cd apps/server && npx prisma db seed",
+    "clean": "turbo clean"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/monim2006/LifeBoard.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/monim2006/LifeBoard/issues"
+  },
+  "homepage": "https://github.com/monim2006/LifeBoard#readme",
+  "devDependencies": {
+    "turbo": "^2.9.14"
+  }
+}

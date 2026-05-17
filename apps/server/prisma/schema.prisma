@@ -1,0 +1,115 @@
+  // apps/server/prisma/schema.prisma
+  generator client {
+    provider = "prisma-client-js"
+  }
+
+  datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+  }
+
+  model User {
+    id            String    @id @default(cuid())
+    email         String    @unique
+    username      String    @unique
+    passwordHash  String
+    avatar        String?
+    theme         String    @default("light")
+    currency      String    @default("USD")
+    weekStartDay  String    @default("Monday")
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    
+    plans         WeeklyPlan[]
+    expenses      Expense[]
+    budgets       Budget[]
+    refreshTokens RefreshToken[]
+  }
+
+  model WeeklyPlan {
+    id            String    @id @default(cuid())
+    userId        String
+    weekStartDate DateTime
+    weekEndDate   DateTime
+    isTemplate    Boolean   @default(false)
+    templateName  String?
+    createdAt     DateTime  @default(now())
+    updatedAt     DateTime  @updatedAt
+    
+    user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    timeBlocks    TimeBlock[]
+  }
+
+  model TimeBlock {
+    id          String    @id @default(cuid())
+    planId      String
+    dayOfWeek   String
+    date        DateTime
+    startTime   String
+    endTime     String
+    title       String
+    description String?
+    category    String
+    priority    String    @default("medium")
+    isCompleted Boolean   @default(false)
+    completedAt DateTime?
+    color       String?
+    isRecurring Boolean   @default(false)
+    order       Int       @default(0)
+    createdAt   DateTime  @default(now())
+    updatedAt   DateTime  @updatedAt
+    
+    plan        WeeklyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+    
+    @@index([planId, dayOfWeek])
+    @@index([date])
+  }
+
+  model Expense {
+    id            String    @id @default(cuid())
+    userId        String
+    amount        Decimal   @db.Decimal(10, 2)
+    category      String
+    subCategory   String?
+    description   String?
+    date          DateTime  @default(now())
+    paymentMethod String?
+    isRecurring   Boolean   @default(false)
+    tags          String[]
+    location      String?
+    createdAt     DateTime  @default(now())
+    
+    user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    @@index([userId, date])
+    @@index([userId, category])
+  }
+
+  model Budget {
+    id             String    @id @default(cuid())
+    userId         String
+    month          Int
+    year           Int
+    category       String
+    budgetAmount   Decimal   @db.Decimal(10, 2)
+    spentAmount    Decimal   @default(0) @db.Decimal(10, 2)
+    alertThreshold Int       @default(80)
+    
+    user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    @@unique([userId, month, year, category])
+    @@index([userId, month, year])
+  }
+
+  model RefreshToken {
+    id        String   @id @default(cuid())
+    token     String   @unique
+    userId    String
+    expiresAt DateTime
+    createdAt DateTime @default(now())
+    
+    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+    
+    @@index([token])
+    @@index([userId])
+  }
