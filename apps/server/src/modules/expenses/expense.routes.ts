@@ -9,8 +9,12 @@ import {
   getTodayTotal,
   getWeeklyTotal,
   getCategoryBreakdown,
+  listBudgets,
+  createBudget,
+  editBudget,
+  removeBudget,
 } from './expense.controller';
-import { addExpenseSchema, updateExpenseSchema } from './expense.schema';
+import { addExpenseSchema, updateExpenseSchema, updateBudgetSchema } from './expense.schema';
 
 const router = Router();
 router.use(authenticate);
@@ -22,5 +26,11 @@ router.delete('/:id', deleteExpense);
 router.get('/today', getTodayTotal);
 router.get('/weekly-total', getWeeklyTotal);
 router.get('/breakdown', getCategoryBreakdown);
+
+// Budgets
+router.get('/budgets', listBudgets);
+router.post('/budgets', createBudget);
+router.put('/budgets/:id', validateBody(updateBudgetSchema), editBudget);
+router.delete('/budgets/:id', removeBudget);
 
 export default router;

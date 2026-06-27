@@ -144,6 +144,40 @@ export const getWeeklyTotal = async (userId: string, weekStartDate: string) => {
   return result._sum.amount ?? 0;
 };
 
+// ─── Budget CRUD ────────────────────────────────────────────────────────────
+
+export const getBudgets = (userId: string) =>
+  prisma.budget.findMany({ where: { userId }, orderBy: [{ year: 'desc' }, { month: 'desc' }] });
+
+export const upsertBudget = async (userId: string, data: { month: number; year: number; category: string; budgetAmount: number; alertThreshold?: number }) => {
+  const existing = await prisma.budget.findFirst({
+    where: { userId, month: data.month, year: data.year, category: data.category },
+  });
+
+  if (existing) {
+    return prisma.budget.update({
+      where: { id: existing.id },
+      data: { budgetAmount: data.budgetAmount, alertThreshold: data.alertThreshold ?? 80 },
+    });
+  }
+
+  return prisma.budget.create({
+    data: { userId, month: data.month, year: data.year, category: data.category, budgetAmount: data.budgetAmount, alertThreshold: data.alertThreshold ?? 80 },
+  });
+};
+
+export const updateBudget = async (budgetId: string, userId: string, data: { budgetAmount?: number; alertThreshold?: number }) => {
+  const existing = await prisma.budget.findUnique({ where: { id: budgetId } });
+  if (!existing || existing.userId !== userId) throw new NotFoundError('Budget not found');
+  return prisma.budget.update({ where: { id: budgetId }, data });
+};
+
+export const deleteBudget = async (budgetId: string, userId: string) => {
+  const existing = await prisma.budget.findUnique({ where: { id: budgetId } });
+  if (!existing || existing.userId !== userId) throw new NotFoundError('Budget not found');
+  await prisma.budget.delete({ where: { id: budgetId } });
+};
+
 export const getCategoryBreakdown = async (userId: string, startDate: string, endDate: string) => {
   const breakdown = await prisma.expense.groupBy({
     by: ['category'],

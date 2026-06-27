@@ -4,7 +4,6 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Your custom base styles */
 @layer base {
   * {
     margin: 0;
@@ -21,10 +20,12 @@
   #root {
     @apply min-h-screen;
   }
+
   .theme {
     --font-heading: var(--font-sans);
     --font-sans: 'Geist Variable', sans-serif;
   }
+
   :root {
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
@@ -59,6 +60,7 @@
     --sidebar-border: oklch(0.922 0 0);
     --sidebar-ring: oklch(0.708 0 0);
   }
+
   .dark {
     --background: oklch(0.145 0 0);
     --foreground: oklch(0.985 0 0);
@@ -92,12 +94,16 @@
     --sidebar-border: oklch(1 0 0 / 10%);
     --sidebar-ring: oklch(0.556 0 0);
   }
+
   html {
     @apply font-sans;
   }
+
+  html[dir="rtl"] {
+    text-align: right;
+  }
 }
 
-/* Custom component classes */
 @layer components {
   .btn-primary {
     @apply bg-primary-500 text-white px-4 py-2 rounded-lg hover:bg-primary-600 transition-colors;
@@ -108,7 +114,6 @@
   }
 }
 
-/* Custom utilities */
 @layer utilities {
   .text-balance {
     text-wrap: balance;

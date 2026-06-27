@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as authService from './auth.service';
 import { RegisterInput, LoginInput, UpdateProfileInput } from './auth.schema';
+import { UnauthorizedError } from '../../utils/errors';
 
 const getRefreshCookieOptions = () => ({
   httpOnly: true,
@@ -16,16 +17,13 @@ export const register = async (
 ) => {
   try {
     const { email, username, password } = req.body;
-    console.log('Register payload:', { email, username });
     const result = await authService.register(email, username, password);
-    console.log('Register result:', { userId: result.user?.id });
 
     res.cookie('refreshToken', result.refreshToken, getRefreshCookieOptions());
     res
       .status(201)
       .json({ success: true, data: { user: result.user, accessToken: result.accessToken } });
   } catch (error) {
-    console.error('Register error:', error);
     next(error);
   }
 };
@@ -52,7 +50,7 @@ export const refreshToken = async (req: Request, res: Response, next: NextFuncti
   try {
     const token = req.cookies.refreshToken;
     if (!token) {
-      throw new Error('Refresh token cookie not found');
+      throw new UnauthorizedError('Refresh token cookie not found');
     }
 
     const result = await authService.refreshSession(token);

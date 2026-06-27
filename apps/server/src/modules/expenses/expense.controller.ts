@@ -72,6 +72,50 @@ export const getWeeklyTotal = async (req: Request, res: Response, next: NextFunc
   }
 };
 
+// ─── Budget CRUD ────────────────────────────────────────────────────────────
+
+export const listBudgets = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).userId as string;
+    const budgets = await expenseService.getBudgets(userId);
+    res.json({ success: true, data: budgets });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const createBudget = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).userId as string;
+    const budget = await expenseService.upsertBudget(userId, req.body);
+    res.status(201).json({ success: true, data: budget });
+  } catch (error) {
+    next(error);
+  }
+};
+
+const p = (params: any, key: string) => Array.isArray(params[key]) ? params[key][0] : params[key];
+
+export const editBudget = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).userId as string;
+    const budget = await expenseService.updateBudget(p(req.params, 'id'), userId, req.body);
+    res.json({ success: true, data: budget });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const removeBudget = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).userId as string;
+    await expenseService.deleteBudget(p(req.params, 'id'), userId);
+    res.json({ success: true, message: 'Budget deleted' });
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const getCategoryBreakdown = async (req: Request, res: Response, next: NextFunction) => {
   try {
     const userId = (req as any).userId as string;

@@ -73,3 +73,25 @@ export const deleteTimeBlock = async (req: Request, res: Response, next: NextFun
     next(error);
   }
 };
+
+export const listPlans = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).userId as string;
+    const includeTemplates = req.query.includeTemplates === 'true';
+    const plans = await plannerService.listPlans(userId, includeTemplates);
+    res.status(200).json({ success: true, data: plans });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deletePlan = async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const userId = (req as any).userId as string;
+    const planId = Array.isArray(req.params.planId) ? req.params.planId[0] : req.params.planId;
+    await plannerService.deletePlan(planId, userId);
+    res.status(200).json({ success: true, message: 'Plan deleted' });
+  } catch (error) {
+    next(error);
+  }
+};

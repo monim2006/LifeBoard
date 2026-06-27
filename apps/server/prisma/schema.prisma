@@ -1,115 +1,444 @@
-  // apps/server/prisma/schema.prisma
-  generator client {
-    provider = "prisma-client-js"
-  }
+generator client {
+  provider = "prisma-client-js"
+}
 
-  datasource db {
-    provider = "postgresql"
-    url      = env("DATABASE_URL")
-  }
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
 
-  model User {
-    id            String    @id @default(cuid())
-    email         String    @unique
-    username      String    @unique
-    passwordHash  String
-    avatar        String?
-    theme         String    @default("light")
-    currency      String    @default("USD")
-    weekStartDay  String    @default("Monday")
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime  @updatedAt
-    
-    plans         WeeklyPlan[]
-    expenses      Expense[]
-    budgets       Budget[]
-    refreshTokens RefreshToken[]
-  }
+// ─── User ───────────────────────────────────────────────────────────────────
 
-  model WeeklyPlan {
-    id            String    @id @default(cuid())
-    userId        String
-    weekStartDate DateTime
-    weekEndDate   DateTime
-    isTemplate    Boolean   @default(false)
-    templateName  String?
-    createdAt     DateTime  @default(now())
-    updatedAt     DateTime  @updatedAt
-    
-    user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-    timeBlocks    TimeBlock[]
-  }
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  username      String    @unique
+  passwordHash  String
+  avatar        String?
+  theme         String    @default("light")
+  language      String    @default("en")
+  currency      String    @default("USD")
+  weekStartDay  String    @default("Monday")
+  timezone      String    @default("UTC")
+  xp            Int       @default(0)
+  level         Int       @default(1)
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
-  model TimeBlock {
-    id          String    @id @default(cuid())
-    planId      String
-    dayOfWeek   String
-    date        DateTime
-    startTime   String
-    endTime     String
-    title       String
-    description String?
-    category    String
-    priority    String    @default("medium")
-    isCompleted Boolean   @default(false)
-    completedAt DateTime?
-    color       String?
-    isRecurring Boolean   @default(false)
-    order       Int       @default(0)
-    createdAt   DateTime  @default(now())
-    updatedAt   DateTime  @updatedAt
-    
-    plan        WeeklyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
-    
-    @@index([planId, dayOfWeek])
-    @@index([date])
-  }
+  plans          WeeklyPlan[]
+  expenses       Expense[]
+  budgets        Budget[]
+  refreshTokens  RefreshToken[]
+  dailyLogs      DailyLog[]
+  habits         Habit[]
+  habitLogs      HabitLog[]
+  goals          Goal[]
+  projects       Project[]
+  achievements   Achievement[]
+  incomeEntries  Income[]
+  timelineEvents TimelineEvent[]
+  meals          Meal[]
+  attachments    Attachment[]
+  categories     Category[]
+  notifications  Notification[]
+  backups        Backup[]
+}
 
-  model Expense {
-    id            String    @id @default(cuid())
-    userId        String
-    amount        Decimal   @db.Decimal(10, 2)
-    category      String
-    subCategory   String?
-    description   String?
-    date          DateTime  @default(now())
-    paymentMethod String?
-    isRecurring   Boolean   @default(false)
-    tags          String[]
-    location      String?
-    createdAt     DateTime  @default(now())
-    
-    user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-    
-    @@index([userId, date])
-    @@index([userId, category])
-  }
+// ─── Category ───────────────────────────────────────────────────────────────
 
-  model Budget {
-    id             String    @id @default(cuid())
-    userId         String
-    month          Int
-    year           Int
-    category       String
-    budgetAmount   Decimal   @db.Decimal(10, 2)
-    spentAmount    Decimal   @default(0) @db.Decimal(10, 2)
-    alertThreshold Int       @default(80)
-    
-    user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-    
-    @@unique([userId, month, year, category])
-    @@index([userId, month, year])
-  }
+model Category {
+  id        String    @id @default(cuid())
+  userId    String
+  name      String
+  type      String    // task, expense, income, project, goal, habit, meal, journal, note, timeline
+  color     String?
+  icon      String?
+  archived  Boolean   @default(false)
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
 
-  model RefreshToken {
-    id        String   @id @default(cuid())
-    token     String   @unique
-    userId    String
-    expiresAt DateTime
-    createdAt DateTime @default(now())
-    
-    user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-    
-    @@index([token])
-    @@index([userId])
-  }
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, name, type])
+  @@index([userId, type])
+}
+
+// ─── Notification ───────────────────────────────────────────────────────────
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String
+  title     String
+  message   String?
+  type      String    // info, warning, success, error
+  read      Boolean   @default(false)
+  link      String?
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, read])
+}
+
+// ─── Backup ─────────────────────────────────────────────────────────────────
+
+model Backup {
+  id        String    @id @default(cuid())
+  userId    String
+  filename  String
+  data      Json
+  size      Int
+  createdAt DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── Daily Log (Heart of the app) ───────────────────────────────────────────
+
+model DailyLog {
+  id           String   @id @default(cuid())
+  userId       String
+  date         DateTime
+  mood         Int?     // 1-10
+  energy       Int?     // 1-10
+  sleepHours   Float?
+  sleepQuality Int?     // 1-10
+  waterGlasses Int?
+  workout      Boolean  @default(false)
+  workoutNotes String?
+  journalEntry String?
+  notes        String?
+  tomorrowPlan String?
+  aiSummary    String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timelineEvents TimelineEvent[]
+  meals          Meal[]
+  attachments    Attachment[]
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@index([date])
+}
+
+// ─── Timeline Event ─────────────────────────────────────────────────────────
+
+model TimelineEvent {
+  id         String   @id @default(cuid())
+  dailyLogId String
+  userId     String
+  date       DateTime
+  title      String
+  description String?
+  startTime  String   // "HH:mm"
+  endTime    String?  // "HH:mm"
+  category   String   // work, personal, health, meal, etc.
+  color      String?
+  order      Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  dailyLog DailyLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([dailyLogId])
+  @@index([userId, date])
+}
+
+// ─── Meal ───────────────────────────────────────────────────────────────────
+
+model Meal {
+  id        String   @id @default(cuid())
+  dailyLogId String
+  userId    String
+  type      String   // breakfast, lunch, dinner, snack
+  name      String
+  calories  Int?
+  notes     String?
+  time      String?  // "HH:mm"
+  createdAt DateTime @default(now())
+
+  dailyLog DailyLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([dailyLogId])
+}
+
+// ─── Attachment ─────────────────────────────────────────────────────────────
+
+model Attachment {
+  id        String   @id @default(cuid())
+  dailyLogId String
+  userId    String
+  fileName  String
+  fileUrl   String
+  fileType  String
+  size      Int?
+  createdAt DateTime @default(now())
+
+  dailyLog DailyLog @relation(fields: [dailyLogId], references: [id], onDelete: Cascade)
+  user     User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([dailyLogId])
+}
+
+// ─── Weekly Plan ────────────────────────────────────────────────────────────
+
+model WeeklyPlan {
+  id            String    @id @default(cuid())
+  userId        String
+  weekStartDate DateTime
+  weekEndDate   DateTime
+  isTemplate    Boolean   @default(false)
+  templateName  String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  timeBlocks TimeBlock[]
+}
+
+// ─── Time Block ─────────────────────────────────────────────────────────────
+
+model TimeBlock {
+  id          String    @id @default(cuid())
+  planId      String
+  dayOfWeek   String
+  date        DateTime
+  startTime   String
+  endTime     String
+  title       String
+  description String?
+  category    String
+  priority    String    @default("medium")
+  isCompleted Boolean   @default(false)
+  completedAt DateTime?
+  color       String?
+  isRecurring Boolean   @default(false)
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  plan WeeklyPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@index([planId, dayOfWeek])
+  @@index([date])
+}
+
+// ─── Expense ────────────────────────────────────────────────────────────────
+
+model Expense {
+  id            String    @id @default(cuid())
+  userId        String
+  amount        Decimal   @db.Decimal(10, 2)
+  category      String
+  subCategory   String?
+  description   String?
+  date          DateTime  @default(now())
+  paymentMethod String?
+  isRecurring   Boolean   @default(false)
+  tags          String[]
+  location      String?
+  createdAt     DateTime  @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+  @@index([userId, category])
+}
+
+// ─── Income ─────────────────────────────────────────────────────────────────
+
+model Income {
+  id          String   @id @default(cuid())
+  userId      String
+  amount      Decimal  @db.Decimal(10, 2)
+  source      String
+  description String?
+  date        DateTime @default(now())
+  isRecurring Boolean  @default(false)
+  tags        String[]
+  createdAt   DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, date])
+}
+
+// ─── Budget ─────────────────────────────────────────────────────────────────
+
+model Budget {
+  id             String   @id @default(cuid())
+  userId         String
+  month          Int
+  year           Int
+  category       String
+  budgetAmount   Decimal  @db.Decimal(10, 2)
+  spentAmount    Decimal  @default(0) @db.Decimal(10, 2)
+  alertThreshold Int      @default(80)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, month, year, category])
+  @@index([userId, month, year])
+}
+
+// ─── Habit ──────────────────────────────────────────────────────────────────
+
+model Habit {
+  id          String   @id @default(cuid())
+  userId      String
+  name        String
+  description String?
+  category    String   // health, productivity, mindfulness, etc.
+  frequency   String   @default("daily") // daily, weekly, monthly
+  target      Int      @default(1)
+  unit        String?  // glasses, minutes, times, etc.
+  color       String?
+  icon        String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  logs HabitLog[]
+
+  @@index([userId])
+}
+
+// ─── Habit Log ──────────────────────────────────────────────────────────────
+
+model HabitLog {
+  id        String   @id @default(cuid())
+  habitId   String
+  userId    String
+  date      DateTime
+  value     Float    @default(1)
+  note      String?
+  createdAt DateTime @default(now())
+
+  habit Habit @relation(fields: [habitId], references: [id], onDelete: Cascade)
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([habitId, userId, date])
+  @@index([userId, date])
+}
+
+// ─── Goal ───────────────────────────────────────────────────────────────────
+
+model Goal {
+  id          String   @id @default(cuid())
+  userId      String
+  title       String
+  description String?
+  category    String   // finance, health, career, learning, etc.
+  startDate   DateTime @default(now())
+  targetDate  DateTime?
+  status      String   @default("active") // active, paused, completed, cancelled
+  progress    Int      @default(0)
+  color       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user       User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  milestones Milestone[]
+  projects   Project[]
+
+  @@index([userId])
+  @@index([userId, status])
+}
+
+// ─── Milestone ──────────────────────────────────────────────────────────────
+
+model Milestone {
+  id        String    @id @default(cuid())
+  goalId    String
+  title     String
+  completed Boolean   @default(false)
+  completedAt DateTime?
+  order     Int       @default(0)
+  createdAt DateTime  @default(now())
+
+  goal Goal @relation(fields: [goalId], references: [id], onDelete: Cascade)
+
+  @@index([goalId])
+}
+
+// ─── Project ────────────────────────────────────────────────────────────────
+
+model Project {
+  id          String    @id @default(cuid())
+  userId      String
+  goalId      String?
+  name        String
+  description String?
+  color       String?
+  status      String    @default("active") // active, paused, completed, archived
+  deadline    DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  user  User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  goal  Goal?         @relation(fields: [goalId], references: [id], onDelete: SetNull)
+  tasks ProjectTask[]
+
+  @@index([userId])
+  @@index([userId, status])
+}
+
+// ─── Project Task ───────────────────────────────────────────────────────────
+
+model ProjectTask {
+  id          String    @id @default(cuid())
+  projectId   String
+  title       String
+  description String?
+  status      String    @default("todo") // todo, in_progress, done
+  priority    String    @default("medium")
+  deadline    DateTime?
+  order       Int       @default(0)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  project Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+
+  @@index([projectId])
+  @@index([projectId, status])
+}
+
+// ─── Achievement ────────────────────────────────────────────────────────────
+
+model Achievement {
+  id         String   @id @default(cuid())
+  userId     String
+  type       String   // streak, milestone, habit, finance, etc.
+  title      String
+  description String?
+  icon       String?
+  xpReward   Int      @default(50)
+  unlockedAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+}
+
+// ─── Refresh Token ──────────────────────────────────────────────────────────
+
+model RefreshToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([token])
+  @@index([userId])
+}

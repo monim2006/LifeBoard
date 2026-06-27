@@ -109,6 +109,27 @@ export const deleteTimeBlock = async (blockId: string) => {
   await prisma.timeBlock.delete({ where: { id: blockId } });
 };
 
+export const listPlans = async (userId: string, includeTemplates: boolean) => {
+  const where: any = { userId };
+  if (!includeTemplates) {
+    where.isTemplate = false;
+  }
+  return prisma.weeklyPlan.findMany({
+    where,
+    include: { timeBlocks: true },
+    orderBy: { weekStartDate: 'desc' },
+  });
+};
+
+export const deletePlan = async (planId: string, userId: string) => {
+  const plan = await prisma.weeklyPlan.findUnique({ where: { id: planId } });
+  if (!plan || plan.userId !== userId) {
+    throw new NotFoundError('Plan not found');
+  }
+  await prisma.timeBlock.deleteMany({ where: { planId } });
+  await prisma.weeklyPlan.delete({ where: { id: planId } });
+};
+
 export const toggleTimeBlock = async (blockId: string) => {
   const block = await prisma.timeBlock.findUnique({ where: { id: blockId } });
   if (!block) {

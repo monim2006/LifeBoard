@@ -36,6 +36,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
   const refresh = async () => {
     try {
+      const token = localStorage.getItem('lifeboard_access_token');
+      if (!token) {
+        setUser(null);
+        return;
+      }
       const result = await authApi.refreshSession();
       localStorage.setItem('lifeboard_access_token', result.accessToken);
       setUser(result.user);

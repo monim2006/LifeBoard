@@ -1,8 +1,9 @@
 import * as jwt from 'jsonwebtoken';
+import { AppError } from './errors';
 
 const getSecret = (value: string | undefined, name: string): string => {
   if (!value) {
-    throw new Error(`Missing JWT secret: ${name}`);
+    throw new AppError(`Missing JWT secret: ${name}`, 500);
   }
   return value;
 };

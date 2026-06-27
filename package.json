@@ -24,6 +24,7 @@
     "url": "https://github.com/monim2006/LifeBoard/issues"
   },
   "homepage": "https://github.com/monim2006/LifeBoard#readme",
+  "packageManager": "npm@10.9.2",
   "devDependencies": {
     "turbo": "^2.9.14"
   }

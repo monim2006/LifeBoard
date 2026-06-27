@@ -7,9 +7,11 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const styles = {
-  primary: 'bg-slate-900 text-white hover:bg-slate-700',
-  secondary: 'bg-white border border-slate-200 text-slate-900 hover:bg-slate-50',
-  ghost: 'bg-transparent text-slate-900 hover:bg-slate-100',
+  primary:
+    'bg-[var(--foreground)] text-[var(--background)] hover:opacity-80',
+  secondary:
+    'border border-[var(--border)] bg-[var(--card)] text-[var(--foreground)] hover:bg-[var(--accent)]',
+  ghost: 'bg-transparent text-[var(--foreground)] hover:bg-[var(--accent)]',
 };
 
 export const Button = ({ children, variant = 'primary', className, ...props }: ButtonProps) => {

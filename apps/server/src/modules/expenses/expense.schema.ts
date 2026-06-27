@@ -13,3 +13,8 @@ export const addExpenseSchema = z.object({
 });
 
 export const updateExpenseSchema = addExpenseSchema.partial();
+
+export const updateBudgetSchema = z.object({
+  budgetAmount: z.number().positive().optional(),
+  alertThreshold: z.number().min(0).max(100).optional(),
+});
